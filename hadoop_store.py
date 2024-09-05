@@ -5,12 +5,22 @@ from io import BytesIO
 import pandas as pd
 import os
 import glob
+from datetime import datetime # 날짜와 시간 함께 다룰때, 시간 조작, 차이 계산
 
 # CSV 파일이 저장된 디렉토리 경로 지정
-directory_path = r'C:\Users\USER\YU\YU_python\test_data'
+directory_path = r'C:\Users\USER\YU\YU_python\crawling-data'
 
 # 디렉토리 경로에서 모든 CSV 파일을 불러옴
 all_file_list = glob.glob(os.path.join(directory_path, '*.csv'))
+
+now = datetime.now()
+print(now.strftime('%Y.%m.%d - %H:%M:%S'))
+year = now.strftime('%Y')
+month = now.strftime('%m')
+day = now.strftime('%d')
+hour = now.strftime('%H')
+minute = now.strftime('%M')
+
 
 # HDFS 클라이언트 초기화
 client_hdfs = InsecureClient('http://10.10.20.134:9870', user='itcous')
@@ -30,10 +40,10 @@ for file_path in all_file_list:
     buffer.seek(0)
 
     # snappy 검증
-    output_dir = r'./test'
+    output_dir = r'./'
     df.to_parquet(os.path.join(output_dir, f'{filename_without_ext}_1.snappy.parquet'), compression='snappy')
     
     # HDFS에 저장
-    hdfs_path = f'/test/{filename_without_ext}.snappy.parquet'
+    hdfs_path = f'/test/{year}/{month}/{day}/{hour}/{minute}/{filename_without_ext}.snappy.parquet'
     with client_hdfs.write(hdfs_path, overwrite=True) as writer:
         writer.write(buffer.getvalue())
