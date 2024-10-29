@@ -23,7 +23,7 @@ minute = now.strftime('%M')
 
 
 # HDFS 클라이언트 초기화
-client_hdfs = InsecureClient('http://10.10.20.134:9870', user='itcous')
+client_hdfs = InsecureClient('http://namenode:9098', user='root') # webhdfs
 
 for file_path in all_file_list:
     # 파일명 추출

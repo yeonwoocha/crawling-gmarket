@@ -13,6 +13,25 @@ import pandas as pd
 import os
 import glob
 from datetime import datetime # 날짜와 시간 함께 다룰때, 시간 조작, 차이 계산
+'''
+Gmarket 
+신선식품: groupCode=100000006 
+    과일/야채: subGroupCode=200000042
+    쌀/잡곡/견과류: subGroupCode=200000039
+    축산: subGroupCode=200000041
+    수산: subGroupCode=200000040
+    김치/반찬: subGroupCode=200000043
+가공식품: groupCode=100000005
+    냉동/간편조리식품: subGroupCode=200000036
+    건강/다이어트식품: subGroupCode=200000037
+    과자/간식: subGroupCode=200000034
+    커피/음료/생수: subGroupCode=200000038
+    캔/오일/조미료: subGroupCode=200000035
+생필품/육아: groupCode=100000007
+생활/주방: groupCode=100001001
+
+'''
+
 
 
 def setup_logging(log_file: str = './crawling.log') -> logging.Logger:
@@ -37,21 +56,21 @@ def setup_logging(log_file: str = './crawling.log') -> logging.Logger:
 class Crawling:
     def __init__(self) -> None:
         # ChromeDriver 초기화
-        self.logger = setup_logging()
+        self._logger = setup_logging()
         options = webdriver.ChromeOptions()
         #options.add_argument('--headless')  # 헤드리스 모드로 설정 (UI 없이 실행)
         options.add_argument('--disable-gpu')  # 성능 향상
         options.add_argument('--no-sandbox')  # 리눅스 환경에서 권한 문제 해결
         #service = Service(executable_path=ChromeDriverManager().install())
-        self.driver = webdriver.Chrome(options=options)
+        self._driver = webdriver.Chrome(options=options)
 
     def crawl(self, url: str):
-        self.driver.get(url)
+        self._driver.get(url)
         data = []
         for i in range(1, 201):
             try:
                 item_selector = f"//div[@id='container']/div[2]/ul/li[{i}]"
-                item_element = self.driver.find_element(By.XPATH, item_selector)
+                item_element = self._driver.find_element(By.XPATH, item_selector)
 
                 rank = item_element.find_element(By.XPATH, ".//a/div[1]/span").text
                 name = item_element.find_element(By.XPATH, ".//a/div[2]/p").text
@@ -67,29 +86,29 @@ class Crawling:
 
                 data.append((rank, name, original_price, sale_price))
             except Exception as e:
-                self.logger.error(f"Error occurred: {e}")
+                self._logger.error(f"Error occurred: {e}")
         
         return data  # 수집한 데이터를 반환
 
     def close(self):
-        self.driver.quit()
+        self._driver.quit()
 
 class store:
     def __init__(self, host):
-        self.host = host
-        self.directory_path = r'C:\Users\USER\YU\YU_python\crawling-data\crawl_data'
-        self.all_file_list = glob.glob(os.path.join(self.directory_path, '*.csv'))
-        self.now = now = datetime.now()
-        self.year = now.strftime('%Y')
-        self.month = now.strftime('%m')
-        self.day = now.strftime('%d')
-        self.hour = now.strftime('%H')
-        self.minute = now.strftime('%M')
+        self._host = host
+        self._directory_path = r'C:\Users\USER\YU\YU_python\crawling-data\crawl_data'
+        self._all_file_list = glob.glob(os.path.join(self._directory_path, '*.csv'))
+        now = datetime.now()
+        self._year = now.strftime('%Y')
+        self._month = now.strftime('%m')
+        self._day = now.strftime('%d')
+        self._hour = now.strftime('%H')
+        self._minute = now.strftime('%M')
     
     def hadoop(self):
         # HDFS 클라이언트 초기화
-        client_hdfs = InsecureClient(self.host, user='itcous')
-        for file_path in self.all_file_list:
+        client_hdfs = InsecureClient(self._host, user='root')
+        for file_path in self._all_file_list:
 
             # 파일명 추출
             filename = os.path.basename(file_path)
@@ -109,7 +128,7 @@ class store:
             df.to_parquet(os.path.join(output_dir, f'{filename_without_ext}_1.snappy.parquet'), compression='snappy')
             
             # HDFS에 저장
-            hdfs_path = f'/test/{self.year}/{self.month}/{self.day}/{self.hour}/{self.minute}/{filename_without_ext}.snappy.parquet'
+            hdfs_path = f'/gmarket/{self._year}/{self._month}/{self._day}/{self._hour}/{self._minute}/{filename_without_ext}.snappy.parquet'
             with client_hdfs.write(hdfs_path, overwrite=True) as writer:
                 writer.write(buffer.getvalue())
 
@@ -131,7 +150,7 @@ def main():
         df.to_parquet(os.path.join(output_dir, 'gmarket_all.parquet'), compression='snappy')
 
     crawler.close()  # 메서드 호출
-    hadoop_host = 'http://10.10.20.134:9870'
+    hadoop_host = 'http://namenode:9098'
     store_instance = store(hadoop_host)
     store_instance.hadoop()
 

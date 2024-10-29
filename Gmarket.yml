@@ -1,0 +1,37 @@
+name_mapping:
+  신선식품: fresh
+  가공식품: frozen
+  생필품육아: daily_necessities
+  생활주방: kitchen
+
+Gmarket:
+  fresh: # 신선식품
+    groupCode: 100000006
+    subGroups:
+      - name: 과일/야채
+        subGroupCode: 200000042 
+      - name: 쌀/잡곡/견과류
+        subGroupCode: 200000039 
+      - name: 축산
+        subGroupCode: 200000041 
+      - name: 수산
+        subGroupCode: 200000040 
+      - name: 김치/반찬
+        subGroupCode: 200000043 
+  frozen: 
+    groupCode: 100000005 # 가공식품
+    subGroups:
+      - name: 냉동/간편조리식품
+        subGroupCode: 200000036 
+      - name: 건강/다이어트식품
+        subGroupCode: 200000037 
+      - name: 과자/간식
+        subGroupCode: 200000034 
+      - name: 커피/음료/생수
+        subGroupCode: 200000038 
+      - name: 캔/오일/조미료
+        subGroupCode: 200000035 
+  daily_necessities: 
+    groupCode: 100000007 # 생필품 육아
+  kitchen: 
+    groupCode: 100001001 # 생활주방
