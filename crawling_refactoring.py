@@ -13,6 +13,7 @@ import pandas as pd
 import os
 import glob
 from datetime import datetime # 날짜와 시간 함께 다룰때, 시간 조작, 차이 계산
+import yaml
 '''
 Gmarket 
 신선식품: groupCode=100000006 
@@ -52,7 +53,38 @@ def setup_logging(log_file: str = './crawling.log') -> logging.Logger:
 
     return logger
 
+def category(group_name, sub_group_name):
+    with open('C:/Users/yeonu/yu_python/crawling-data/Gmarket.yml', encoding='UTF-8') as f:
+    # file = yaml.load(f, Loader=yaml.Loader) 
+        file = yaml.full_load(f) # yaml.load 보다 보안과 신뢰성을 더 높게 유지
+    
+    # name_mapping을 통해 내부 키 값을 가져옵니다
+    group_key = file['name_mapping'][group_name]
+    group_data = file['Gmarket'][group_key]
 
+    # group_data에서 해당 sub_group을 찾습니다
+    sub_group_code = None
+    for sub_group in group_data.get('subGroups', []):
+        if sub_group['name'] == sub_group_name:
+            sub_group_code = sub_group['subGroupCode']
+            break
+
+    print(f'Group Code: {group_data["groupCode"]}')
+    print(f'Sub Group Code: {sub_group_code}')
+
+    group_code = group_data["groupCode"]
+
+    # URL 설정
+    if sub_group_code:
+        url = f'https://www.gmarket.co.kr/n/best?groupCode={group_code}&subGroupCode={sub_group_code}'
+    else:
+        url = f'https://www.gmarket.co.kr/n/best?groupCode={group_code}'
+    
+    return url
+
+# def file_name(): # 추가
+    
+      
 class Crawling:
     def __init__(self) -> None:
         # ChromeDriver 초기화
@@ -96,7 +128,7 @@ class Crawling:
 class store:
     def __init__(self, host):
         self._host = host
-        self._directory_path = r'C:\Users\USER\YU\YU_python\crawling-data\crawl_data'
+        self._directory_path = r'C:\Users\yeonu\yu_python\crawl_data'
         self._all_file_list = glob.glob(os.path.join(self._directory_path, '*.csv'))
         now = datetime.now()
         self._year = now.strftime('%Y')
@@ -109,7 +141,6 @@ class store:
         # HDFS 클라이언트 초기화
         client_hdfs = InsecureClient(self._host, user='root')
         for file_path in self._all_file_list:
-
             # 파일명 추출
             filename = os.path.basename(file_path)
             filename_without_ext = os.path.splitext(filename)[0]  # 확장자 제거
@@ -138,8 +169,9 @@ class store:
 
 
 def main():
+    url = category('신선식품','과일/야채') # 카테고리
     crawler = Crawling()
-    data = crawler.crawl('https://www.gmarket.co.kr/n/best')
+    data = crawler.crawl(url)
     # 데이터 저장 (예: JSON 파일)
     if data:
         output_dir = './crawl_data'
