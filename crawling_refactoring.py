@@ -14,6 +14,7 @@ import os
 import glob
 from datetime import datetime # 날짜와 시간 함께 다룰때, 시간 조작, 차이 계산
 import yaml
+import re
 '''
 Gmarket 
 신선식품: groupCode=100000006 
@@ -53,34 +54,49 @@ def setup_logging(log_file: str = './crawling.log') -> logging.Logger:
 
     return logger
 
-def category(group_name, sub_group_name):
-    with open('C:/Users/yeonu/yu_python/crawling-data/Gmarket.yml', encoding='UTF-8') as f:
-    # file = yaml.load(f, Loader=yaml.Loader) 
-        file = yaml.full_load(f) # yaml.load 보다 보안과 신뢰성을 더 높게 유지
+class Category():
+    def __init__(self, group_name, sub_group_name) -> None:
+        self._logger = setup_logging()
+        self._group_name = group_name
+        self._sub_group_name = sub_group_name
+
+    def store_name(self):
+        '''
+        gmarket sub_category 부분에 '/' 있는 항목들 존재하기 때문 폴더로 인식
+        '''
+        safe_group_name = re.sub(r'[<>:"/\\|?*]', '_', self._group_name)
+        safe_sub_group_name = re.sub(r'[<>:"/\\|?*]', '_', self._sub_group_name)
+        file_name = f'gmarket_{safe_group_name}_{safe_sub_group_name}'
+        return file_name
     
-    # name_mapping을 통해 내부 키 값을 가져옵니다
-    group_key = file['name_mapping'][group_name]
-    group_data = file['Gmarket'][group_key]
+    def category(self):
+        with open('C:/Users/USER/YU/YU_python/crawling-data/Gmarket.yml', encoding='UTF-8') as f:
+        # file = yaml.load(f, Loader=yaml.Loader) 
+            file = yaml.full_load(f) # yaml.load 보다 보안과 신뢰성을 더 높게 유지
+        
+        # name_mapping을 통해 내부 키 값을 가져옵니다
+        group_key = file['name_mapping'][self._group_name]
+        group_data = file['Gmarket'][group_key]
 
-    # group_data에서 해당 sub_group을 찾습니다
-    sub_group_code = None
-    for sub_group in group_data.get('subGroups', []):
-        if sub_group['name'] == sub_group_name:
-            sub_group_code = sub_group['subGroupCode']
-            break
+        # group_data에서 해당 sub_group을 찾습니다
+        sub_group_code = None
+        for sub_group in group_data.get('subGroups', []):
+            if sub_group['name'] == self._sub_group_name:
+                sub_group_code = sub_group['subGroupCode']
+                break
 
-    print(f'Group Code: {group_data["groupCode"]}')
-    print(f'Sub Group Code: {sub_group_code}')
+        print(f'Group Code: {group_data["groupCode"]}')
+        print(f'Sub Group Code: {sub_group_code}')
 
-    group_code = group_data["groupCode"]
+        group_code = group_data["groupCode"]
 
-    # URL 설정
-    if sub_group_code:
-        url = f'https://www.gmarket.co.kr/n/best?groupCode={group_code}&subGroupCode={sub_group_code}'
-    else:
-        url = f'https://www.gmarket.co.kr/n/best?groupCode={group_code}'
-    
-    return url
+        # URL 설정
+        if sub_group_code:
+            url = f'https://www.gmarket.co.kr/n/best?groupCode={group_code}&subGroupCode={sub_group_code}'
+        else:
+            url = f'https://www.gmarket.co.kr/n/best?groupCode={group_code}'
+        
+        return url
 
 # def file_name(): # 추가
     
@@ -169,7 +185,9 @@ class store:
 
 
 def main():
-    url = category('신선식품','과일/야채') # 카테고리
+    category = Category("신선식품", "쌀/잡곡/견과류") # 카테고리
+    url = category.category()
+    file_name = category.store_name()
     crawler = Crawling()
     data = crawler.crawl(url)
     # 데이터 저장 (예: JSON 파일)
@@ -177,14 +195,14 @@ def main():
         output_dir = './crawl_data'
         os.makedirs(output_dir, exist_ok=True)
         df = pd.DataFrame(data, columns=['rank', 'name', 'original_price', 'sale_price'])
-        df.to_json(os.path.join(output_dir, 'gmarket_all.json'), orient="records", force_ascii=False, indent=4)
-        df.to_csv(os.path.join(output_dir, 'gmarket_all.csv'), sep=',', encoding='utf-8-sig')   # utf-8로 하면 한글깨짐
-        df.to_parquet(os.path.join(output_dir, 'gmarket_all.parquet'), compression='snappy')
+        df.to_json(os.path.join(output_dir, f'{file_name}.json'), orient="records", force_ascii=False, indent=4)
+        df.to_csv(os.path.join(output_dir, f'{file_name}.csv'), sep=',', encoding='utf-8-sig')   # utf-8로 하면 한글깨짐
+        df.to_parquet(os.path.join(output_dir, f'{file_name}.parquet'), compression='snappy')
 
     crawler.close()  # 메서드 호출
-    hadoop_host = 'http://namenode:9098'
-    store_instance = store(hadoop_host)
-    store_instance.hadoop()
+    #hadoop_host = 'http://namenode:9098'
+    #store_instance = store(hadoop_host)
+    #store_instance.hadoop()
 
 
 if __name__ == "__main__":
