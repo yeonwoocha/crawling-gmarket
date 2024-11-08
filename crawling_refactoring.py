@@ -36,7 +36,7 @@ Gmarket
 
 
 
-def setup_logging(log_file: str = './crawling.log') -> logging.Logger:
+def setup_logging(log_file: str = r'C:\Users\USER\YU\YU_python\crawling-data\crawl_data\crawling.log') -> logging.Logger:
     """로깅 설정 함수."""
     logger = logging.getLogger()
 
@@ -144,7 +144,7 @@ class Crawling:
 class store:
     def __init__(self, host):
         self._host = host
-        self._directory_path = r'C:\Users\yeonu\yu_python\crawl_data'
+        self._directory_path = r'C:\Users\USER\YU\YU_python\crawling-data\crawl_data'
         self._all_file_list = glob.glob(os.path.join(self._directory_path, '*.csv'))
         now = datetime.now()
         self._year = now.strftime('%Y')
@@ -170,9 +170,9 @@ class store:
             pq.write_table(table, buffer, compression='snappy') # 
             buffer.seek(0)
 
-            # snappy 검증
-            output_dir = r'./'
-            df.to_parquet(os.path.join(output_dir, f'{filename_without_ext}_1.snappy.parquet'), compression='snappy')
+            # # snappy 검증
+            # output_dir = r'./'
+            # df.to_parquet(os.path.join(output_dir, f'{filename_without_ext}_1.snappy.parquet'), compression='snappy')
             
             # HDFS에 저장
             hdfs_path = f'/gmarket/{self._year}/{self._month}/{self._day}/{self._hour}/{self._minute}/{filename_without_ext}.snappy.parquet'
@@ -192,7 +192,7 @@ def main():
     data = crawler.crawl(url)
     # 데이터 저장 (예: JSON 파일)
     if data:
-        output_dir = './crawl_data'
+        output_dir = r'C:\Users\USER\YU\YU_python\crawling-data\crawl_data'
         os.makedirs(output_dir, exist_ok=True)
         df = pd.DataFrame(data, columns=['rank', 'name', 'original_price', 'sale_price'])
         df.to_json(os.path.join(output_dir, f'{file_name}.json'), orient="records", force_ascii=False, indent=4)
@@ -200,9 +200,9 @@ def main():
         df.to_parquet(os.path.join(output_dir, f'{file_name}.parquet'), compression='snappy')
 
     crawler.close()  # 메서드 호출
-    #hadoop_host = 'http://namenode:9098'
-    #store_instance = store(hadoop_host)
-    #store_instance.hadoop()
+    hadoop_host = 'http://namenode:9098'
+    store_instance = store(hadoop_host)
+    store_instance.hadoop()
 
 
 if __name__ == "__main__":
