@@ -1,3 +1,0 @@
-2024-11-08 17:41:30,038 - hdfs.client - INFO - Instantiated <InsecureClient(url='http://namenode:9098')>.
-2024-11-08 17:41:30,065 - hdfs.client - INFO - Writing to '/gmarket/2024/11/08/17/41/gmarket_all.snappy.parquet'.
-2024-11-08 17:41:30,438 - hdfs.client - INFO - Writing to '/gmarket/2024/11/08/17/41/gmarket_신선식품_쌀_잡곡_견과류.snappy.parquet'.
