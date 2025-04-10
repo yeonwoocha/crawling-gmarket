@@ -36,7 +36,7 @@ Gmarket
 
 
 
-def setup_logging(log_file: str = r'C:\Users\USER\YU\YU_python\crawling-data\crawl_data\crawling.log') -> logging.Logger:
+def setup_logging(log_file: str = r'./crawling.log') -> logging.Logger:
     """로깅 설정 함수."""
     logger = logging.getLogger()
 
@@ -70,13 +70,12 @@ class Category():
         return file_name
     
     def category(self):
-        with open('C:/Users/USER/YU/YU_python/crawling-data/Gmarket.yml', encoding='UTF-8') as f:
+        with open('./Gmarket.yml', encoding='UTF-8') as f:
         # file = yaml.load(f, Loader=yaml.Loader) 
             file = yaml.full_load(f) # yaml.load 보다 보안과 신뢰성을 더 높게 유지
         
         # name_mapping을 통해 내부 키 값을 가져옵니다
-        group_key = file['name_mapping'][self._group_name]
-        group_data = file['Gmarket'][group_key]
+        group_data = file['Gmarket'][self._group_name]
 
         # group_data에서 해당 sub_group을 찾습니다
         sub_group_code = None
@@ -192,7 +191,7 @@ def main():
     data = crawler.crawl(url)
     # 데이터 저장 (예: JSON 파일)
     if data:
-        output_dir = r'C:\Users\USER\YU\YU_python\crawling-data\crawl_data'
+        output_dir = r'./crawl_data'
         os.makedirs(output_dir, exist_ok=True)
         df = pd.DataFrame(data, columns=['rank', 'name', 'original_price', 'sale_price'])
         df.to_json(os.path.join(output_dir, f'{file_name}.json'), orient="records", force_ascii=False, indent=4)
